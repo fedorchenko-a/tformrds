@@ -1,12 +1,12 @@
 variable "region" {
   description = "Value of the regions"
   type        = string
-  default     = "us-east-1"
+  default     = "eu-west-1"
 }
 
 
 variable "instance_type" {
-  description = "Value of the regions"
+  description = "Value of the instance"
   type        = string
   default     = "t2.micro"
 }
@@ -20,7 +20,7 @@ variable "allowed_cidr_blocks" {
 
 variable "availability_zones" {
   type = list
-  default = ["us-east-1a", "us-east-1f", "us-east-1b", "us-east-1c"]
+  default = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
 }
 
 variable "database_name" {
@@ -45,8 +45,8 @@ variable "database_password" {
 variable "amis" {
   type = map(any)
   default = {
-    "us-east-1" = "ami-0dc2d3e4c0f9ebd18"
-    "us-east-2" = "ami-0ba62214afa52bec7"
+    "eu-west-1" = "ami-0fe0b2cf0e1f25c8a"
+    #"eu-west-2" = "ami-084e8c05825742534"
   }
 }
 
@@ -57,13 +57,7 @@ variable "amis" {
 variable "instance_name" {
   description = "Value of the regions"
   type        = string
-  default     = "CloudBhai-EC2-Instance-webserver"
+  default     = "EC2-Instance-webserv"
 }
 
-
-variable "endpoint" {
-  description = "Value of the endpoing"
-  type        = string
-  default     = "http://cloudbhai.oneok.com"
-}
 

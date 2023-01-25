@@ -22,7 +22,7 @@ resource "aws_vpc" "vpc" {
   enable_dns_support   = "true"
 
   tags = {
-    Name = "Cloudbhai-example-vpc"
+    Name = "Vpc"
   }
 }
 
@@ -34,7 +34,7 @@ resource "aws_internet_gateway" "gateway" {
   vpc_id = "${aws_vpc.vpc.id}"
 
   tags = {
-    Name = "Cloudbhai-example-internet-gateway"
+    Name = "Internet gateway"
   }
 }
 
@@ -60,7 +60,7 @@ resource "aws_subnet" "rds_subnet1" {
   availability_zone       = var.availability_zones[0]
 
   tags = {
-    Name = "CloudBhai_rds_private_subnet1"
+    Name = "Rds_private_subnet1"
   }
 }
 
@@ -70,10 +70,10 @@ resource "aws_subnet" "rds_subnet2" {
   vpc_id                  = "${aws_vpc.vpc.id}"
   cidr_block              = "10.0.1.0/24"
   map_public_ip_on_launch = false
-  availability_zone       = var.availability_zones[3]
+  availability_zone       = var.availability_zones[2]
 
   tags = {
-    Name = "CloudBhai_rds_private_subnet2"
+    Name = "Rds_private_subnet2"
   }
 }
 
@@ -83,11 +83,11 @@ resource "aws_subnet" "rds_subnet2" {
 
 
 resource "aws_db_subnet_group" "rds" {
-  name       = "main"
+  name       = "rds"
   subnet_ids = ["${aws_subnet.rds_subnet1.id}", "${aws_subnet.rds_subnet2.id}"]
 
   tags = {
-    Name = "CloudBhai  DB subnet group"
+    Name = "DB subnet group"
   }
 }
 
@@ -96,7 +96,7 @@ resource "aws_db_subnet_group" "rds" {
 ######CREATE RDS SECURITY GROUP
 
 resource "aws_security_group" "rds" {
-  name        = "mysqlallow"
+  name        = "mysql_allow"
   description = "ssh allow to the mysql"
   vpc_id      = "${aws_vpc.vpc.id}"
 
@@ -125,7 +125,7 @@ resource "aws_security_group" "rds" {
   }
 
   tags = {
-    Name = "CloudBhai-SG OF RDS"
+    Name = "RDS security group"
   }
 }
 
@@ -179,7 +179,7 @@ resource "aws_db_parameter_group" "rds" {
 resource "aws_db_instance" "rds" {
   allocated_storage    = 10
   engine               = "mysql"
-  engine_version       = "5.7.19"
+  engine_version       = "5.7.33"
   instance_class       = "db.t2.micro"
   name                 = "${var.database_name}"
   username             = "${var.database_user}"
@@ -195,15 +195,11 @@ resource "aws_db_instance" "rds" {
 
 
   tags = {
-    Name = "CloudBhai-RDS-MYSQL"
+    Name = "RDS-MYSQL"
   }
 }
 
 
-########## END OF RDS PORTION ########
-
-
-########### START OF WEBSERVER SECTION #########
 
 
 #### CREATE  WEB SUBNET####### 
@@ -216,7 +212,7 @@ resource "aws_subnet" "web_subnet2" {
   availability_zone       = var.availability_zones[1]
 
   tags = {
-    Name = "CloudBhai-public-subnet2"
+    Name = "Public-subnet2"
   }
 }
 
@@ -229,7 +225,7 @@ resource "aws_subnet" "web_subnet3" {
   availability_zone       = var.availability_zones[2]
 
   tags = {
-    Name = "CloudBhai-public-subnet3"
+    Name = "Public-subnet3"
   }
 }
 
@@ -265,7 +261,7 @@ resource "aws_security_group" "web_sg1" {
   }
 
   tags = {
-    Name = "CloudBhai-WEB-security-group1"
+    Name = "Web security group1"
   }
 }
 
@@ -297,7 +293,7 @@ resource "aws_security_group" "web_sg2" {
   }
 
   tags = { 
-    Name = "CloudBhai-WEB-security-group2"
+    Name = "Web security group2"
   }
 }
 
@@ -309,7 +305,7 @@ resource "aws_instance" "app_server" {
   instance_type                        = "t2.micro"
 #   instance_type                        = "var.instance_type"
   associate_public_ip_address          = true
-  key_name                             = "cloudbhai"
+##  key_name                             = "webapp"
 #  availability_zone                    = var.availability_zone
   vpc_security_group_ids               = ["${aws_security_group.web_sg1.id}", "${aws_security_group.web_sg2.id}"]
   subnet_id                            = "${aws_subnet.web_subnet2.id}" 
@@ -339,7 +335,7 @@ depends_on = [aws_db_instance.rds]
 
 
 resource "aws_ami_from_instance" "ec2_image" {
-  name               = "terraform-example"
+  name               = "webapp"
   source_instance_id = "${aws_instance.app_server.id}"
 
 depends_on = [aws_instance.app_server]
@@ -354,7 +350,7 @@ depends_on = [aws_instance.app_server]
 resource "aws_launch_configuration" "ec2" {
   image_id               = "${aws_ami_from_instance.ec2_image.id}"
   instance_type          = "t2.micro"
-  key_name               = "cloudbhai"
+##  key_name               = "webapp"
   security_groups        =  ["${aws_security_group.web_sg1.id}", "${aws_security_group.web_sg2.id}"]
  # user_data = file("init1.sh")
   lifecycle {
@@ -367,7 +363,7 @@ resource "aws_launch_configuration" "ec2" {
 resource "aws_autoscaling_group" "ec2" {
   launch_configuration = "${aws_launch_configuration.ec2.id}"
 #  availability_zones = var.availability_zones
-  min_size = 2
+  min_size = 1
   max_size = 3
 #   load_balancers = ["${aws_alb.alb.id}"]
 
@@ -408,17 +404,17 @@ resource "aws_security_group" "alb" {
   }
 
   tags =  {
-    Name = "CloudBhai-alb-security-group"
+    Name = "Alb security group"
   }
 }
 
 resource "aws_alb" "alb" {
-  name            = "terraform-example-alb"
+  name            = "terraform-alb"
   security_groups = ["${aws_security_group.alb.id}"]
   subnets         = ["${aws_subnet.web_subnet2.id}","${aws_subnet.web_subnet3.id}"]
 #   subnets         = aws_subnet.main.*.id
   tags = {
-    Name = "CloudBhai-example-alb"
+    Name = "ALB"
   }
 }
 
@@ -427,7 +423,7 @@ resource "aws_alb" "alb" {
 ##### create new target group
 
 resource "aws_alb_target_group" "group" {
-  name     = "terraform-example-alb-target"
+  name     = "alb-target"
   port     = 80
   protocol = "HTTP"
   vpc_id   = "${aws_vpc.vpc.id}"
@@ -445,12 +441,12 @@ resource "aws_alb_target_group" "group" {
 
 
 resource "aws_alb_listener" "listener_http" {
-  load_balancer_arn = "${aws_alb.alb.arn}"
+  load_balancer_arn = aws_alb.alb.arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
-    target_group_arn = "${aws_alb_target_group.group.arn}"
+    target_group_arn = aws_alb_target_group.group.arn
     type             = "forward"
   }
 }
